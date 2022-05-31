@@ -36,7 +36,7 @@ private:
     int                     maxThreadNum_;          //最大线程数
     int                     maxTaskQueueLength_;    //最大任务队列长度
     int                     liveTime_;              //空闲线程生存时间  
-    atomic<int>             runningTaskCount;       //原子类型，正在执行的任务数量
+    atomic<int>             runningTaskCount = 0;   //原子类型，正在执行的任务数量
     mutex                   taskQueueLock;          //获取队列长度时用到的互斥锁
 
     void threadInitFunction();                      //线程函数，在这个函数内部取出任务执行（任务可以是函数或者lambda等可调用对象）
