@@ -1,5 +1,6 @@
 #include "RejectPolicy.hpp"
 #include <stdlib.h>
+#include <iostream>
 
 BaseRejectPolicy::BaseRejectPolicy(){}
 
@@ -16,6 +17,7 @@ DiscardPolicy::~DiscardPolicy(){}
 
 void DiscardPolicy::reject(function<void()>)
 {
+    std::cout<<"\n *** Discard Policy ***\n"<<std::endl;
     return ;
 }
 
@@ -25,6 +27,7 @@ AbortPolicy::~AbortPolicy(){}
 
 void AbortPolicy::reject(function<void()>)
 {
+    std::cout<<"\n *** Abort Policy ***\n"<<std::endl;
     abort();
 }
 
@@ -34,6 +37,7 @@ CallerRunPolicy::~CallerRunPolicy(){}
 
 void CallerRunPolicy::reject(function<void()> task)
 {
+    std::cout<<"\n *** Caller Run Policy ***\n"<<std::endl;
     task();
 }
 

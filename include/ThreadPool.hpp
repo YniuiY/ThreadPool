@@ -57,10 +57,7 @@ private:
 
     /* Functions  */ 
     void    threadFunction(std::function<void()>); //线程函数，起来以后是独立线程，任务函数执行在这个函数中
-    // int getRunningTasksCount();
-    int     getRunningThreadCount();
-    int     getLivingThreadCount();
-    int     getCurrentTaskQueueSize();
+    int     getTaskQueueSize();
     void    joinAllThreads();
     void    init();
     void    gettid();
@@ -75,19 +72,19 @@ public:
     bool execute(Func&& task, Args&&... args)
     {
         bool ret = true;
-        if(threadQueue.size() >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLenght)
+        if(livingThread >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLenght)
         {
             taskQueue.push(bind(task, args...));//任务队列没满先让任务进队列。
             cv.notify_one();
             runingThread++;
         }
-        else if(threadQueue.size() < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
+        else if(livingThread < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
         {
             //任务队列满了，但是活跃的线程数小于最大线程数，则开新的线程并将任务直接交给新线程。
             threadQueue.push(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
             livingThread++;
         }
-        else if(runingThread >= coreThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
+        else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
         {
             //reject，队列满，线程数也到达最大线程数，这个时候调用拒绝策略
             rejectFatory->getInstance()->getRejectPolicy(policy)->reject(bind(task, args...));
@@ -95,6 +92,10 @@ public:
         }
         return ret;
     }
+
+    int     getRunningThreadCount();
+    int     getLivingThreadCount();
+    int     getCurrentTaskQueueSize();
 };
 
 #endif

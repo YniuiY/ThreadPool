@@ -1,9 +1,9 @@
 #include "ThreadPool.hpp"
-#include <windows.h>
+#include <unistd.h>
 void task(int a)
 {
-    cout<<"thread id:"<<this_thread::get_id()<<endl;
-    // cout<<"a:"<<a++<<endl;
+    cout<<a<<" thread id:"<<this_thread::get_id()<<endl;
+    sleep(1);
 }
 
 int main()
@@ -12,10 +12,15 @@ int main()
     int coreCount = 2;
     int taskQueueLength = 8;
     Policy policy = Discard;
-    int liveTime = 10;
+    int liveTime = 5;
     Unit unit = Secend;
     // ThreadPool(int maxCount, int coreCount, int tQueuelenght, Policy p, int lTime, Unit u);
     ThreadPool* threadPoolPtr = new ThreadPool(maxCount, coreCount, taskQueueLength, policy, liveTime, unit);
-    for(int i = 0; i < 10; i++)
-        threadPoolPtr->execute(task, 0);   
+    for(int i = 0; i < 100; i++)
+        threadPoolPtr->execute(task, i);
+    // delete threadPoolPtr;
+    sleep(20);
+    cout<<"living thread count: "<<threadPoolPtr->getLivingThreadCount()<<endl;
+
+    return 0;
 }

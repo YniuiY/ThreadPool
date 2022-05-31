@@ -53,6 +53,7 @@ void ThreadPool::threadFunction(function<void()> func)
 {
     if(func != nullptr)
     {
+        cout<<"func not nullptr\n";
         func();
     }
 
@@ -86,6 +87,7 @@ void ThreadPool::threadFunction(function<void()> func)
                 status = cv.wait_for(tasksLock, chrono::minutes(liveTime));
                 break;
             case Secend:
+                cout<<"thread wait for "<<liveTime<<" secend"<<endl;
                 status = cv.wait_for(tasksLock, chrono::seconds(liveTime));
                 break;
             case Millisecend:
@@ -102,14 +104,17 @@ void ThreadPool::threadFunction(function<void()> func)
                 status = cv.wait_for(tasksLock, chrono::seconds(liveTime));
                 break;
             }
-
+            cout<<"exit switch\n";
+            cout<<"living threads:"<<livingThread<<endl;
+            cout<<"task queue size:"<<getTaskQueueSize()<<endl;
             //如果线程阻塞超时，当前运行的线程数大于核心线程数，任务队列不满，则让非核心线程结束
-            if(status == cv_status::no_timeout && (runingThread > coreThreadCount) && (getCurrentTaskQueueSize() < taskQueueLenght))
+            if(status == cv_status::timeout && (livingThread > coreThreadCount) && (getTaskQueueSize() < taskQueueLenght))
             {
+                cout<<"\n *** thread exit"<<endl;
                 livingThread--;
                 break;
             }
-            
+
         }
 
     }
@@ -140,5 +145,10 @@ int ThreadPool::getLivingThreadCount()
 int ThreadPool::getCurrentTaskQueueSize()
 {
     unique_lock<mutex> tasksLock(mutex_);
+    return taskQueue.size();
+}
+
+int ThreadPool::getTaskQueueSize()
+{
     return taskQueue.size();
 }
