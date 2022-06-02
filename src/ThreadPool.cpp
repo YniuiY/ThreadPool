@@ -57,9 +57,9 @@ void ThreadPool::threadFunction(function<void()> func)
         func();
     }
 
+    unique_lock<mutex> tasksLock(mutex_);
     for(;;)
     {
-        unique_lock<mutex> tasksLock(mutex_);
         if(isShutdown)
         {
             runingThread--;
@@ -68,12 +68,22 @@ void ThreadPool::threadFunction(function<void()> func)
         }
         else if(!taskQueue.empty())
         {
+            /**
+             * move返回一个原本左值对象的右值引用。
+             * 将右值引用赋值给一个左值，这个过程会调用移动赋值运算符，移动构造对象避免了内存拷贝从而带来性能提高
+             */
             function<void()> currentFunction = std::move(taskQueue.front());
-            // function<void()> currentFunction = taskQueue.front();
+
+            /**
+             * 直接从队列中取出可调用对象也是可以的。
+             * 只不过这个过程会调用拷贝赋值运算符，拷贝构造对象因为需要内存拷贝所以性能一般
+             */
+            // function<void()> currentFunction = taskQueue.front(); 
             taskQueue.pop();
 
             tasksLock.unlock(); //解锁才能并行执行任务
             currentFunction();
+            tasksLock.lock(); //重新上锁保证下一次从任务队列取任务是互斥的
         }
         else if(taskQueue.empty())
         {
@@ -111,7 +121,7 @@ void ThreadPool::threadFunction(function<void()> func)
             //如果线程阻塞超时，当前运行的线程数大于核心线程数，任务队列不满，则让非核心线程结束
             if(status == cv_status::timeout && (livingThread > coreThreadCount) && (getTaskQueueSize() < taskQueueLenght))
             {
-                cout<<"\n *** thread exit"<<endl;
+                cout<<"\n*** thread exit ***"<<endl;
                 livingThread--;
                 break;
             }
@@ -129,6 +139,10 @@ void ThreadPool::threadFunction(function<void()> func)
 void ThreadPool::joinAllThreads()
 {
     //queue没有迭代器
+    /**
+     * 由于核心线程与非核心线程不固定的原因，不能保证线程队列中的对象在调用本函数时依然存在
+     * 调用本函数可能会join已经不存在thread
+     */
     isShutdown = true;
     for(int i = 0; i < threadQueue.size(); i++)
     {
