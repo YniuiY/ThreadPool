@@ -68,11 +68,12 @@ void ThreadPool::threadFunction(function<void()> func)
         }
         else if(!taskQueue.empty())
         {
-            auto currentFuncion = std::move(taskQueue.front());
+            function<void()> currentFunction = std::move(taskQueue.front());
+            // function<void()> currentFunction = taskQueue.front();
             taskQueue.pop();
 
-            tasksLock.unlock(); //解锁才能任务并行执行
-            currentFuncion();
+            tasksLock.unlock(); //解锁才能并行执行任务
+            currentFunction();
         }
         else if(taskQueue.empty())
         {
@@ -113,6 +114,10 @@ void ThreadPool::threadFunction(function<void()> func)
                 cout<<"\n *** thread exit"<<endl;
                 livingThread--;
                 break;
+            }
+            else if(status == cv_status::timeout && livingThread <= coreThreadCount)
+            {
+                cv.wait(tasksLock); //如果只剩下核心线程，则直接阻塞等待唤醒
             }
 
         }
