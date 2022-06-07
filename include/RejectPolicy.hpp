@@ -53,10 +53,13 @@ class RejectPolicyFactory
 {
 private:
     static RejectPolicyFactory* factoryInstance;
-    BaseRejectPolicy* rejectPolicy;
+    BaseRejectPolicy* rejectPolicy = nullptr;
+    AbortPolicy*      abortPolicy = nullptr;
+    DiscardPolicy*    discardPolicy = nullptr;
+    CallerRunPolicy*  callerRunPolicy = nullptr;
     RejectPolicyFactory();
 public:
     ~RejectPolicyFactory();
-    RejectPolicyFactory* getInstance();
+    static RejectPolicyFactory* getInstance();
     BaseRejectPolicy* getRejectPolicy(Policy);
 };

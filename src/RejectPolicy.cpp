@@ -11,7 +11,10 @@ void BaseRejectPolicy::reject(function<void()>)
     return;
 }
 
-DiscardPolicy::DiscardPolicy(){}
+DiscardPolicy::DiscardPolicy()
+{
+    cout<<"construct DiscardPolicy\n";
+}
 
 DiscardPolicy::~DiscardPolicy(){}
 
@@ -21,7 +24,10 @@ void DiscardPolicy::reject(function<void()>)
     return ;
 }
 
-AbortPolicy::AbortPolicy(){}
+AbortPolicy::AbortPolicy()
+{
+    cout<<"construct AbortPolicy\n";
+}
 
 AbortPolicy::~AbortPolicy(){}
 
@@ -31,7 +37,10 @@ void AbortPolicy::reject(function<void()>)
     abort();
 }
 
-CallerRunPolicy::CallerRunPolicy(){}
+CallerRunPolicy::CallerRunPolicy()
+{
+    cout<<"construct CallerRunPolicy\n";
+}
 
 CallerRunPolicy::~CallerRunPolicy(){}
 
@@ -48,6 +57,7 @@ RejectPolicyFactory::RejectPolicyFactory(){}
 
 RejectPolicyFactory* RejectPolicyFactory::getInstance()
 {
+    cout<<"get instance\n";
     if(factoryInstance == nullptr)
     {
         factoryInstance = new RejectPolicyFactory();
@@ -60,13 +70,26 @@ BaseRejectPolicy* RejectPolicyFactory::getRejectPolicy(Policy policy)
     switch (policy)
     {
     case Discard:
-        rejectPolicy = new DiscardPolicy();
+        if(discardPolicy == NULL)
+        {
+            discardPolicy = new DiscardPolicy();
+        }
+        rejectPolicy = discardPolicy;
         break;
     case Abort:
-        rejectPolicy = new AbortPolicy();
+        if(abortPolicy == NULL)
+        {
+            abortPolicy = new AbortPolicy();
+        }
+        rejectPolicy = abortPolicy;
         break;
     case CallerRun:
-        rejectPolicy = new CallerRunPolicy();
+        if(callerRunPolicy == NULL)
+        {
+            callerRunPolicy = new CallerRunPolicy();
+        }
+        rejectPolicy = callerRunPolicy;
+        break;
     default:
         rejectPolicy = new BaseRejectPolicy();
         break;

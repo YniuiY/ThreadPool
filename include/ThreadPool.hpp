@@ -49,7 +49,7 @@ private:
     int                                 liveTime;
     Unit                                unit;
     Policy                              policy;
-    RejectPolicyFactory*                rejectFatory;
+    // RejectPolicyFactory*                rejectFatory;
     bool                                isShutdown;
     int                                 maxThreadCount;
     int                                 coreThreadCount;
@@ -76,10 +76,11 @@ public:
     template<class Func, class... Args>
     bool execute(Func&& task, Args&&... args)
     {
-        cout<<"rValue refrence func\n"<<endl;
+        // cout<<"rValue refrence func\n"<<endl;
         bool ret = true;
         if(livingThread >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLenght)
         {
+            cout<<"task queue push\n";
             taskQueue.push(bind(task, args...));//任务队列没满先让任务进队列。
             cv.notify_one();
             runingThread++;
@@ -87,13 +88,16 @@ public:
         else if(livingThread < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
         {
             //任务队列满了，但是活跃的线程数小于最大线程数，则开新的线程并将任务直接交给新线程。
+            cout<<"new thread \n";
             threadQueue.push(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
             livingThread++;
         }
         else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
         {
             //reject，队列满，线程数也到达最大线程数，这个时候调用拒绝策略
-            rejectFatory->getInstance()->getRejectPolicy(policy)->reject(bind(task, args...));
+            // rejectFatory->getInstance()->getRejectPolicy(policy)->reject(bind(task, args...));
+            cout<<"reject task \n";
+            RejectPolicyFactory::getInstance()->getRejectPolicy(policy)->reject(bind(task,args...));
             ret = false;
         }
         return ret;
@@ -107,7 +111,7 @@ public:
     template<class Func, class... Args>
     bool execute(const Func& task, const Args&... args)
     {
-        cout<<"const lValue refrence\n"<<endl;
+        // cout<<"const lValue refrence\n"<<endl;
         bool ret = true;
         if(livingThread >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLenght)
         {
@@ -124,7 +128,8 @@ public:
         else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
         {
             //reject，队列满，线程数也到达最大线程数，这个时候调用拒绝策略
-            rejectFatory->getInstance()->getRejectPolicy(policy)->reject(bind(task, args...));
+            // rejectFatory->getInstance()->getRejectPolicy(policy)->reject(bind(task, args...));
+            RejectPolicyFactory::getInstance()->getRejectPolicy(policy)->reject(bind(task,args...));
             ret = false;
         }
         return ret;
