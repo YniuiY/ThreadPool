@@ -39,7 +39,8 @@ enum Unit
 class ThreadPool
 {
 private:
-    std::queue<std::thread>             threadQueue; //线程队列
+    std::queue<std::thread>             threadQueue; //核心线程队列
+    std::vector<std::thread>            noneCoreThreadQueue; //非核心线程队列
     std::queue<std::function<void()>>   taskQueue; //function模板可以将函数、指针、lambda等多种可调用对象，描述成一种可调用对象
     std::atomic<int>                    runingThread;
     std::atomic<int>                    runningTasks;
@@ -89,7 +90,7 @@ public:
         {
             //任务队列满了，但是活跃的线程数小于最大线程数，则开新的线程并将任务直接交给新线程。
             cout<<"new thread \n";
-            threadQueue.push(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
+            noneCoreThreadQueue.push_back(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
             livingThread++;
         }
         else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
@@ -122,7 +123,7 @@ public:
         else if(livingThread < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
         {
             //任务队列满了，但是活跃的线程数小于最大线程数，则开新的线程并将任务直接交给新线程。
-            threadQueue.push(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
+            noneCoreThreadQueue.push_back(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
             livingThread++;
         }
         else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)

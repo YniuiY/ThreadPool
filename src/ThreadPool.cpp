@@ -42,7 +42,7 @@ void ThreadPool::init()
 
     for(int i = 0; i < coreThreadCount; i++)
     {
-        threadQueue.push(thread(&ThreadPool::threadFunction, this, [](){cout<<"core Thread pushed\n";}));
+        threadQueue.push(thread(&ThreadPool::threadFunction, this, nullptr));
         runingThread++;
         livingThread++;
     }
@@ -51,10 +51,15 @@ void ThreadPool::init()
 
 void ThreadPool::threadFunction(function<void()> func)
 {
+    bool coreThread = false;
     if(func != nullptr)
     {
         cout<<"func not nullptr\n";
         func();
+    }
+    else
+    {
+        coreThread = true;
     }
 
     unique_lock<mutex> tasksLock(mutex_);
@@ -98,7 +103,7 @@ void ThreadPool::threadFunction(function<void()> func)
                 status = cv.wait_for(tasksLock, chrono::minutes(liveTime));
                 break;
             case Secend:
-                cout<<"thread wait for "<<liveTime<<" secend"<<endl;
+                // cout<<"thread wait for "<<liveTime<<" secend"<<endl;
                 status = cv.wait_for(tasksLock, chrono::seconds(liveTime));
                 break;
             case Millisecend:
@@ -115,19 +120,17 @@ void ThreadPool::threadFunction(function<void()> func)
                 status = cv.wait_for(tasksLock, chrono::seconds(liveTime));
                 break;
             }
-            cout<<"exit switch\n";
-            cout<<"living threads:"<<livingThread<<endl;
-            cout<<"task queue size:"<<getTaskQueueSize()<<endl;
-            //如果线程阻塞超时，当前运行的线程数大于核心线程数，任务队列不满，则让非核心线程结束
-            if(status == cv_status::timeout && (livingThread > coreThreadCount) && (getTaskQueueSize() < taskQueueLenght))
+
+            //如果线程阻塞超时，任务队列不满，则让非核心线程结束
+            if(!coreThread && status == cv_status::timeout && (getTaskQueueSize() < taskQueueLenght))
             {
-                cout<<"\n*** thread exit ***"<<endl;
+                cout<<"\n*** none core thread exit ***"<<endl;
                 livingThread--;
                 break;
             }
-            else if(status == cv_status::timeout && livingThread <= coreThreadCount)
+            else if(coreThread && status == cv_status::timeout && getTaskQueueSize() == 0)
             {
-                cv.wait(tasksLock); //如果只剩下核心线程，则直接阻塞等待唤醒
+                cv.wait(tasksLock); //核心线程，任务队列为空则阻塞
             }
 
         }
@@ -139,15 +142,28 @@ void ThreadPool::threadFunction(function<void()> func)
 void ThreadPool::joinAllThreads()
 {
     //queue没有迭代器
-    /**
-     * 由于核心线程与非核心线程不固定的原因，不能保证线程队列中的对象在调用本函数时依然存在
-     * 调用本函数可能会join已经不存在thread
-     */
     isShutdown = true;
-    for(int i = 0; i < threadQueue.size(); i++)
+    cv.notify_all();
+
+    // 非核心线程join
+    for(int i = 0; i < noneCoreThreadQueue.size(); i++)
     {
-        threadQueue.front().join();
-        threadQueue.pop();
+        if(noneCoreThreadQueue[i].joinable())
+        {
+            cout<<"None core thread join\n";
+            noneCoreThreadQueue[i].join();
+        }
+    }
+
+    // 核心线程join
+    for(int i = 0; i < coreThreadCount; i++)
+    {
+        if(threadQueue.front().joinable())
+        {
+            cout<<"Core thread join\n";
+            threadQueue.front().join();
+            threadQueue.pop();
+        }
     }
 }
 
