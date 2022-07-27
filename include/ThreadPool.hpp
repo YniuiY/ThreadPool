@@ -30,10 +30,10 @@ enum Unit
 {
     Hours,
     Minutes,
-    Secend,
-    Millisecend,
-    Microsecend,
-    Nanosecend
+    Second,
+    Millisecond,
+    Microsecond,
+    Nanosecond
 };
 
 class ThreadPool
@@ -42,7 +42,7 @@ private:
     std::queue<std::thread>             threadQueue; //核心线程队列
     std::vector<std::thread>            noneCoreThreadQueue; //非核心线程队列
     std::queue<std::function<void()>>   taskQueue; //function模板可以将函数、指针、lambda等多种可调用对象，描述成一种可调用对象
-    std::atomic<int>                    runingThread;
+    std::atomic<int>                    runningThread;
     std::atomic<int>                    runningTasks;
     std::atomic<int>                    livingThread;
     std::mutex                          mutex_;
@@ -50,23 +50,22 @@ private:
     int                                 liveTime;
     Unit                                unit;
     Policy                              policy;
-    // RejectPolicyFactory*                rejectFatory;
     bool                                isShutdown;
     int                                 maxThreadCount;
     int                                 coreThreadCount;
-    int                                 taskQueueLenght;
+    int                                 taskQueueLength;
 
     /* Functions  */ 
-    void    threadFunction(std::function<void()>); //线程函数，起来以后是独立线程，任务函数执行在这个函数中
+    void    threadFunction(std::function<void()>&&); //线程函数，起来以后是独立线程，任务函数执行在这个函数中
     int     getTaskQueueSize();
     void    joinAllThreads();
     void    init();
-    void    gettid();
+    void    getTid();
 
 public:
     ThreadPool();
-    ThreadPool(int maxCount, int coreCount, int tQueuelenght);
-    ThreadPool(int maxCount, int coreCount, int tQueuelenght, Policy p, int lTime, Unit u);
+    ThreadPool(int maxCount, int coreCount, int tQueueLength);
+    ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p, int lTime, Unit u);
     ~ThreadPool();
     
     /**
@@ -77,26 +76,24 @@ public:
     template<class Func, class... Args>
     bool execute(Func&& task, Args&&... args)
     {
-        // cout<<"rValue refrence func\n"<<endl;
         bool ret = true;
-        if(livingThread >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLenght)
+        if(livingThread >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLength)
         {
             cout<<"task queue push\n";
             taskQueue.push(bind(task, args...));//任务队列没满先让任务进队列。
             cv.notify_one();
-            runingThread++;
+            runningThread++;
         }
-        else if(livingThread < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
+        else if(livingThread < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLength)
         {
             //任务队列满了，但是活跃的线程数小于最大线程数，则开新的线程并将任务直接交给新线程。
             cout<<"new thread \n";
             noneCoreThreadQueue.push_back(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
             livingThread++;
         }
-        else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
+        else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLength)
         {
             //reject，队列满，线程数也到达最大线程数，这个时候调用拒绝策略
-            // rejectFatory->getInstance()->getRejectPolicy(policy)->reject(bind(task, args...));
             cout<<"reject task \n";
             RejectPolicyFactory::getInstance()->getRejectPolicy(policy)->reject(bind(task,args...));
             ret = false;
@@ -112,24 +109,22 @@ public:
     template<class Func, class... Args>
     bool execute(const Func& task, const Args&... args)
     {
-        // cout<<"const lValue refrence\n"<<endl;
         bool ret = true;
-        if(livingThread >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLenght)
+        if(livingThread >= coreThreadCount && getCurrentTaskQueueSize() < taskQueueLength)
         {
             taskQueue.push(bind(task, args...));//任务队列没满先让任务进队列。
             cv.notify_one();
-            runingThread++;
+            runningThread++;
         }
-        else if(livingThread < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
+        else if(livingThread < maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLength)
         {
             //任务队列满了，但是活跃的线程数小于最大线程数，则开新的线程并将任务直接交给新线程。
             noneCoreThreadQueue.push_back(thread(&ThreadPool::threadFunction, this, bind(task, args...)));
             livingThread++;
         }
-        else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLenght)
+        else if(livingThread >= maxThreadCount && getCurrentTaskQueueSize() >= taskQueueLength)
         {
             //reject，队列满，线程数也到达最大线程数，这个时候调用拒绝策略
-            // rejectFatory->getInstance()->getRejectPolicy(policy)->reject(bind(task, args...));
             RejectPolicyFactory::getInstance()->getRejectPolicy(policy)->reject(bind(task,args...));
             ret = false;
         }

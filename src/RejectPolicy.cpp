@@ -1,14 +1,14 @@
 #include "RejectPolicy.hpp"
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 
-BaseRejectPolicy::BaseRejectPolicy(){}
+BaseRejectPolicy::BaseRejectPolicy()= default;
 
-BaseRejectPolicy::~BaseRejectPolicy(){}
+BaseRejectPolicy::~BaseRejectPolicy()= default;
 
-void BaseRejectPolicy::reject(function<void()>)
+void BaseRejectPolicy::reject(function<void()>&&)
 {
-    return;
+
 }
 
 DiscardPolicy::DiscardPolicy()
@@ -16,12 +16,11 @@ DiscardPolicy::DiscardPolicy()
     cout<<"construct DiscardPolicy\n";
 }
 
-DiscardPolicy::~DiscardPolicy(){}
+DiscardPolicy::~DiscardPolicy()= default;
 
-void DiscardPolicy::reject(function<void()>)
+void DiscardPolicy::reject(function<void()>&&)
 {
     std::cout<<"\n *** Discard Policy ***\n"<<std::endl;
-    return ;
 }
 
 AbortPolicy::AbortPolicy()
@@ -29,9 +28,9 @@ AbortPolicy::AbortPolicy()
     cout<<"construct AbortPolicy\n";
 }
 
-AbortPolicy::~AbortPolicy(){}
+AbortPolicy::~AbortPolicy()= default;
 
-void AbortPolicy::reject(function<void()>)
+void AbortPolicy::reject(function<void()>&&)
 {
     std::cout<<"\n *** Abort Policy ***\n"<<std::endl;
     abort();
@@ -42,9 +41,9 @@ CallerRunPolicy::CallerRunPolicy()
     cout<<"construct CallerRunPolicy\n";
 }
 
-CallerRunPolicy::~CallerRunPolicy(){}
+CallerRunPolicy::~CallerRunPolicy()= default;
 
-void CallerRunPolicy::reject(function<void()> task)
+void CallerRunPolicy::reject(function<void()>&& task)
 {
     std::cout<<"\n *** Caller Run Policy ***\n"<<std::endl;
     task();
@@ -53,7 +52,9 @@ void CallerRunPolicy::reject(function<void()> task)
 
 RejectPolicyFactory* RejectPolicyFactory::factoryInstance = nullptr;
 
-RejectPolicyFactory::RejectPolicyFactory(){}
+RejectPolicyFactory::RejectPolicyFactory()= default;
+
+RejectPolicyFactory::~RejectPolicyFactory() = default;
 
 RejectPolicyFactory* RejectPolicyFactory::getInstance()
 {
@@ -70,21 +71,21 @@ BaseRejectPolicy* RejectPolicyFactory::getRejectPolicy(Policy policy)
     switch (policy)
     {
     case Discard:
-        if(discardPolicy == NULL)
+        if(discardPolicy == nullptr)
         {
             discardPolicy = new DiscardPolicy();
         }
         rejectPolicy = discardPolicy;
         break;
     case Abort:
-        if(abortPolicy == NULL)
+        if(abortPolicy == nullptr)
         {
             abortPolicy = new AbortPolicy();
         }
         rejectPolicy = abortPolicy;
         break;
     case CallerRun:
-        if(callerRunPolicy == NULL)
+        if(callerRunPolicy == nullptr)
         {
             callerRunPolicy = new CallerRunPolicy();
         }

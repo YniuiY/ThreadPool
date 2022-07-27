@@ -13,7 +13,7 @@ int main()
     int taskQueueLength = 8;
     Policy policy = Discard;
     int liveTime = 2;
-    Unit unit = Secend;
+    Unit unit = Second;
     // ThreadPool(int maxCount, int coreCount, int tQueuelenght, Policy p, int lTime, Unit u);
     ThreadPool* threadPoolPtr = new ThreadPool(maxCount, coreCount, taskQueueLength, policy, liveTime, unit);
     for(int i = 0; i < 100; i++)

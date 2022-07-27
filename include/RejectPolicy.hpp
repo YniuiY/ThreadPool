@@ -21,32 +21,32 @@ public:
     BaseRejectPolicy();
     virtual ~BaseRejectPolicy();
 
-    virtual void reject(function<void()>);
+    virtual void reject(function<void()>&&);
 };
 
 class AbortPolicy : public BaseRejectPolicy
 {
 public:
     AbortPolicy();
-    ~AbortPolicy();
+    ~AbortPolicy() override;
 
-    void reject(function<void()>) override;
+    void reject(function<void()>&&) override;
 };
 
 class CallerRunPolicy : public BaseRejectPolicy
 {
 public:
     CallerRunPolicy();
-    ~CallerRunPolicy();
-    void reject(function<void()>) override;
+    ~CallerRunPolicy() override;
+    void reject(function<void()>&&) override;
 };
 
 class DiscardPolicy : public BaseRejectPolicy
 {
 public:
     DiscardPolicy();
-    ~DiscardPolicy();
-    void reject(function<void()>) override;
+    ~DiscardPolicy() override;
+    void reject(function<void()>&&) override;
 };
 
 class RejectPolicyFactory

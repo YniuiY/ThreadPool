@@ -2,17 +2,17 @@
 
 ThreadPool::ThreadPool(){}
 
-ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLenght)
-    : maxThreadCount(maxCount), coreThreadCount(coreCount), taskQueueLenght(tQueueLenght),
-    isShutdown(false)
+ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength)
+    : maxThreadCount(maxCount), coreThreadCount(coreCount), taskQueueLength(tQueueLength),
+      isShutdown(false)
 {
     init();
 }
 
-ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLenght, Policy p, int ltime, Unit u)
-    : maxThreadCount(maxCount), coreThreadCount(coreCount), taskQueueLenght(tQueueLenght),
-    isShutdown(false), policy(p), liveTime(ltime), unit(u),
-    runingThread(0), runningTasks(0), livingThread(0)
+ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p, int ltime, Unit u)
+    : maxThreadCount(maxCount), coreThreadCount(coreCount), taskQueueLength(tQueueLength),
+      isShutdown(false), policy(p), liveTime(ltime), unit(u),
+      runningThread(0), runningTasks(0), livingThread(0)
 {
     init();
 }
@@ -22,16 +22,16 @@ ThreadPool::~ThreadPool()
     joinAllThreads();
 }
 
-void ThreadPool::gettid()
+void ThreadPool::getTid()
 {
     cout<<"thread id:"<<this_thread::get_id()<<endl;
 }
 
 void ThreadPool::init()
 {
-    if(coreThreadCount <= 0 || maxThreadCount <= 0 || taskQueueLenght < 0)
+    if(coreThreadCount <= 0 || maxThreadCount <= 0 || taskQueueLength < 0)
     {
-        throw invalid_argument("coreThreadCount, maxThreadCount and taskQueueLenght mast bigger than 0");
+        throw invalid_argument("coreThreadCount, maxThreadCount and taskQueueLength mast bigger than 0");
         return;
     }
     if(maxThreadCount < coreThreadCount)
@@ -43,13 +43,13 @@ void ThreadPool::init()
     for(int i = 0; i < coreThreadCount; i++)
     {
         threadQueue.push(thread(&ThreadPool::threadFunction, this, nullptr));
-        runingThread++;
+        runningThread++;
         livingThread++;
     }
 
 }
 
-void ThreadPool::threadFunction(function<void()> func)
+void ThreadPool::threadFunction(function<void()>&& func)
 {
     bool coreThread = false;
     if(func != nullptr)
@@ -67,7 +67,7 @@ void ThreadPool::threadFunction(function<void()> func)
     {
         if(isShutdown)
         {
-            runingThread--;
+            runningThread--;
             livingThread--;
             break;
         }
@@ -92,7 +92,7 @@ void ThreadPool::threadFunction(function<void()> func)
         }
         else if(taskQueue.empty())
         {
-            runingThread--;
+            runningThread--;
             cv_status status = cv_status::no_timeout;
             switch (unit)
             {
@@ -102,17 +102,16 @@ void ThreadPool::threadFunction(function<void()> func)
             case Minutes:
                 status = cv.wait_for(tasksLock, chrono::minutes(liveTime));
                 break;
-            case Secend:
-                // cout<<"thread wait for "<<liveTime<<" secend"<<endl;
+            case Second:
                 status = cv.wait_for(tasksLock, chrono::seconds(liveTime));
                 break;
-            case Millisecend:
+            case Millisecond:
                 status = cv.wait_for(tasksLock, chrono::milliseconds(liveTime));
                 break;
-            case Microsecend:
+            case Microsecond:
                 status = cv.wait_for(tasksLock, chrono::microseconds(liveTime));
                 break;
-            case Nanosecend:
+            case Nanosecond:
                 status = cv.wait_for(tasksLock, chrono::nanoseconds(liveTime));
                 break;
             
@@ -122,7 +121,7 @@ void ThreadPool::threadFunction(function<void()> func)
             }
 
             //如果线程阻塞超时，任务队列不满，则让非核心线程结束
-            if(!coreThread && status == cv_status::timeout && (getTaskQueueSize() < taskQueueLenght))
+            if(!coreThread && status == cv_status::timeout && (getTaskQueueSize() < taskQueueLength))
             {
                 cout<<"\n*** none core thread exit ***"<<endl;
                 livingThread--;
@@ -146,12 +145,12 @@ void ThreadPool::joinAllThreads()
     cv.notify_all();
 
     // 非核心线程join
-    for(int i = 0; i < noneCoreThreadQueue.size(); i++)
+    for(auto & i : noneCoreThreadQueue)
     {
-        if(noneCoreThreadQueue[i].joinable())
+        if(i.joinable())
         {
             cout<<"None core thread join\n";
-            noneCoreThreadQueue[i].join();
+            i.join();
         }
     }
 
@@ -169,7 +168,7 @@ void ThreadPool::joinAllThreads()
 
 int ThreadPool::getRunningThreadCount()
 {
-    return runingThread;
+    return runningThread;
 }
 
 int ThreadPool::getLivingThreadCount()
@@ -180,10 +179,10 @@ int ThreadPool::getLivingThreadCount()
 int ThreadPool::getCurrentTaskQueueSize()
 {
     unique_lock<mutex> tasksLock(mutex_);
-    return taskQueue.size();
+    return (int)taskQueue.size();
 }
 
 int ThreadPool::getTaskQueueSize()
 {
-    return taskQueue.size();
+    return (int)taskQueue.size();
 }
