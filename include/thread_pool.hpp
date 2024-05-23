@@ -42,6 +42,7 @@ class ThreadPool {
   ThreadPool();
   ThreadPool(int maxCount, int coreCount, int tQueueLength);
   ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p, int lTime, Unit u);
+  ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p, int lTime, Unit u, bool is_batch_io);
   ~ThreadPool();
 
   /**
@@ -124,7 +125,9 @@ class ThreadPool {
     int                                 maxThreadCount;
     int                                 coreThreadCount;
     int                                 taskQueueLength;
-    int                                 task_index_;                                 
+    int                                 task_index_;
+    int                                 none_core_thread_index_;
+    bool                                is_batch_io_;
 
     /* Functions  */ 
     void  none_core_thread_function(std::function<void()>&&); //线程函数，起来以后是独立线程，任务函数执行在这个函数中

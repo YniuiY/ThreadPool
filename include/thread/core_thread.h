@@ -22,7 +22,8 @@ class CoreThread {
   void SetThreadPoolParam(std::vector<std::shared_ptr<CoreThread>>const& core_thread_vector,
                           StealQueue<Task>* pool_task_queue,
                           int index,
-                          int core_thread_num);
+                          int core_thread_num,
+                          bool is_batch_io);
 
  private:
   void run();
@@ -42,6 +43,8 @@ class CoreThread {
   bool is_running_;                         // 线程运行状态
   int index_;                               // 核心线程索引
   int core_thread_num_;                     //
+  int wait_num_;                            // 无任务空阻塞次数
+  int wait_timeout_num_;                    // 阻塞超时次数
   std::mutex lock_;                         // 
   std::condition_variable cv_;              // 
   std::thread thread_;                      // 线程

@@ -6,7 +6,9 @@ ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength)
     : maxThreadCount(maxCount),
       coreThreadCount(coreCount),
       taskQueueLength(tQueueLength),
-      isShutdown(false) {
+      isShutdown(false),
+      none_core_thread_index_(0),
+      is_batch_io_(false) {
   init();
 }
 
@@ -21,7 +23,26 @@ ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p,
       unit(u),
       runningThread(0),
       runningTasks(0),
-      livingThread(0) {
+      livingThread(0),
+      none_core_thread_index_(0),
+      is_batch_io_(false) {
+  init();
+}
+
+ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p,
+                       int ltime, Unit u, bool is_batch_io)
+    : maxThreadCount(maxCount),
+      coreThreadCount(coreCount),
+      taskQueueLength(tQueueLength),
+      isShutdown(false),
+      policy(p),
+      liveTime(ltime),
+      unit(u),
+      runningThread(0),
+      runningTasks(0),
+      livingThread(0),
+      none_core_thread_index_(0),
+      is_batch_io_(is_batch_io) {
   init();
 }
 
@@ -52,8 +73,10 @@ void ThreadPool::init() {
     livingThread++;
   }
 
+  std::cout << "ThreadPool Open Batch IO: " << is_batch_io_ << std::endl;
+
   for (int i = 0; i < coreThreadCount; i++) {
-    core_thread_queue_[i]->SetThreadPoolParam(core_thread_queue_, &pool_task_queue_, i, coreThreadCount);
+    core_thread_queue_[i]->SetThreadPoolParam(core_thread_queue_, &pool_task_queue_, i, coreThreadCount, is_batch_io_);
     core_thread_queue_[i]->Init();
   }
 }
@@ -61,8 +84,9 @@ void ThreadPool::init() {
 void ThreadPool::none_core_thread_function(std::function<void()>&& func) {
   int ttl = NONE_CORE_THREAD_TTL; // ttl归零线程退出
   std::mutex wait_mutex_;
+  int index = ++none_core_thread_index_;
+
   if (func != nullptr) {
-    std::cout << "func not nullptr\n";
     func();
   }
 
@@ -74,11 +98,10 @@ void ThreadPool::none_core_thread_function(std::function<void()>&& func) {
     }
     Task task;
     if (pool_task_queue_.TryPop(task)) {
-      std::cout << "none core thread run task\n";
+      // std::cout << "none core thread run task\n";
       task();
-      std::cout << "none core thread run task over\n";
+      std::cout << "none core thread: " << index << " run task over\n";
     } else if (pool_task_queue_.Empty()) {
-      std::cout << "pool task queue is empty, wait for: " << liveTime << std::endl;
       runningThread--;
       std::unique_lock<std::mutex> wait_lock(wait_mutex_);
       std::cv_status status = std::cv_status::no_timeout;
@@ -90,7 +113,6 @@ void ThreadPool::none_core_thread_function(std::function<void()>&& func) {
           status = cv.wait_for(wait_lock, std::chrono::minutes(liveTime));
           break;
         case Second:
-          std::cout << "wait for:" << liveTime << " second\n";
           status = cv.wait_for(wait_lock, std::chrono::seconds(liveTime));
           break;
         case Millisecond:
@@ -107,7 +129,6 @@ void ThreadPool::none_core_thread_function(std::function<void()>&& func) {
           status = cv.wait_for(wait_lock, std::chrono::seconds(liveTime));
           break;
       }
-      std::cout << "wait_for over \n";
       // 如果线程阻塞超时 && 池任务队列为空，非核心线程的 ttl-1，ttl归零后退出
       if (status == std::cv_status::timeout && pool_task_queue_.Empty()) {
         --ttl;
