@@ -44,14 +44,17 @@ void ThreadPool::init() {
     return;
   }
 
+  core_thread_queue_.reserve(coreThreadCount);
   for (int i = 0; i < coreThreadCount; i++) {
-    std::cout << "make core thread\n";
-    core_thread_queue_.emplace_back(std::make_shared<CoreThread>());
-    core_thread_queue_[i]->SetThreadPoolParam(core_thread_queue_, &pool_task_queue_, i);
-    core_thread_queue_[i]->Init();
-    // threadQueue.push_back(std::thread(&ThreadPool::threadFunction, this, nullptr));
+    std::cout << "make core thread: " << i << std::endl;
+    core_thread_queue_.emplace_back(new CoreThread());
     runningThread++;
     livingThread++;
+  }
+
+  for (int i = 0; i < coreThreadCount; i++) {
+    core_thread_queue_[i]->SetThreadPoolParam(core_thread_queue_, &pool_task_queue_, i, coreThreadCount);
+    core_thread_queue_[i]->Init();
   }
 }
 

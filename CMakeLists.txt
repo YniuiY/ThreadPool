@@ -12,12 +12,8 @@ include_directories(./include)
 
 aux_source_directory(./src SRCS)
 aux_source_directory(./src/reject_policy REJECT_SRCS)
-aux_source_directory(./src/thread_local/ THREAD_LOCAL_SRCS)
+aux_source_directory(./src/thread/ THREAD_SRCS)
 
-add_executable(run ${SRCS} ${REJECT_SRCS} ${THREAD_LOCAL_SRCS})
+add_library(ThreadPool SHARED ${SRCS} ${REJECT_SRCS} ${THREAD_SRCS})
 
-message("THREAD_LOCAL_SRCS:${THREAD_LOCAL_SRCS}")
-
-add_library(ThreadPool SHARED ${SRCS} ${REJECT_SRCS} ${THREAD_LOCAL_SRCS})
-
-target_link_libraries(run pthread)
+target_link_libraries(ThreadPool pthread)
