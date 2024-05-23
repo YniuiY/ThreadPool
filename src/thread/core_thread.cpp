@@ -6,7 +6,7 @@ void CoreThread::Init() {
   wait_timeout_num_ = 0;
   is_batch_io_ = false;
   thread_ = std::thread(std::bind(&CoreThread::run, this));
-  std::cout << "CoreThread: " << index_ << "is running\n";
+  std::cout << "CoreThread: " << index_ << ", thread id: " << thread_.get_id() << " is running\n";
 }
 
 void CoreThread::Stop() {

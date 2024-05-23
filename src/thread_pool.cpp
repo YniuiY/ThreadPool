@@ -67,10 +67,10 @@ void ThreadPool::init() {
 
   core_thread_queue_.reserve(coreThreadCount);
   for (int i = 0; i < coreThreadCount; i++) {
-    std::cout << "make core thread: " << i << std::endl;
     core_thread_queue_.emplace_back(new CoreThread());
     runningThread++;
     livingThread++;
+    std::cout << "make core thread: " << i << std::endl;
   }
 
   std::cout << "ThreadPool Open Batch IO: " << is_batch_io_ << std::endl;
