@@ -26,7 +26,7 @@
 
 #include "global_define.h"
 #include "reject_policy/reject_policy.hpp"
-#include "thread_local/core_thread.h"
+#include "thread/core_thread.h"
 
 class ThreadPool {
  public:
@@ -109,10 +109,8 @@ class ThreadPool {
   int  getCurrentTaskQueueSize();
 
  private:
-    // std::vector<std::thread>            threadQueue; //核心线程队列
     std::vector<std::shared_ptr<CoreThread>> core_thread_queue_; // 核心本地队列线程
-    std::vector<std::thread>            none_core_thread_queue_; //非核心线程队列
-    // std::queue<std::function<void()>>   taskQueue; //function模板可以将函数、指针、lambda等多种可调用对象，描述成一种可调用对象
+    std::vector<std::thread>                 none_core_thread_queue_; //非核心线程队列
     StealQueue<Task>                    pool_task_queue_;
     std::atomic<int>                    runningThread;
     std::atomic<int>                    runningTasks;

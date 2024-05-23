@@ -7,3 +7,7 @@ cd build
 cmake ..
 make -j8
 cd ..
+
+cd sample
+sh build.sh
+cd ..
