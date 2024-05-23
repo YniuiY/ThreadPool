@@ -2,7 +2,8 @@
 
 void CoreThread::Init() {
   is_running_ = true;
-  /// TODO: 暂时关闭，先将本地队列和任务窃取调试完成，再调试扇入扇出
+  wait_num_ = 0;
+  wait_timeout_num_ = 0;
   is_batch_io_ = false;
   thread_ = std::thread(std::bind(&CoreThread::run, this));
   std::cout << "CoreThread: " << index_ << "is running\n";
@@ -20,11 +21,13 @@ void CoreThread::Stop() {
 
 void CoreThread::SetThreadPoolParam(std::vector<std::shared_ptr<CoreThread>>const& core_thread_vector,
                                     StealQueue<Task>* pool_task_queue_ptr,
-                                    int index, int core_thread_num) {
+                                    int index, int core_thread_num,
+                                    bool is_batch_io) {
   core_thread_queue_ = core_thread_vector;
   pool_task_queue_ptr_ = pool_task_queue_ptr;
   index_ = index;
   core_thread_num_ = core_thread_num;
+  is_batch_io_ = is_batch_io;
   create_steal_range();
 }
 
@@ -49,12 +52,16 @@ void CoreThread::run() {
 void CoreThread::run_task () {
   Task task;
   if (pop_task(task) || pop_pool_task(task) || steal_task(task)) {
-    std::cout << "*** Core thread task run ***\n";
+    // std::cout << "*** Core thread task run ***\n";
     task();
-    std::cout << "*** Core thread task run over ***\n";
+    // std::cout << "*** Core thread task run over ***\n";
   } else {
+    std::cout << "Core thread: " << index_ << " wait num: " << wait_num_++ <<  std::endl;
     std::unique_lock<std::mutex> ul(lock_);
-    cv_.wait_for(ul, std::chrono::milliseconds(2000));
+    auto status = cv_.wait_for(ul, std::chrono::milliseconds(2000));
+    if (status == std::cv_status::timeout) {
+      std::cout << "Core thread: " << index_ << " wait timeout num: " << wait_timeout_num_++ << std::endl;
+    }
   }
 }
 
@@ -65,8 +72,12 @@ void CoreThread::run_tasks() {
       task();
     }
   } else {
+    std::cout << "Core thread: " << index_ << " wait num: " << wait_num_++ <<  std::endl;
     std::unique_lock<std::mutex> ul(lock_);
-    cv_.wait_for(ul, std::chrono::milliseconds(2000));
+    auto status = cv_.wait_for(ul, std::chrono::milliseconds(2000));
+    if (status == std::cv_status::timeout) {
+      std::cout << "Core thread: " << index_ << " wait timeout num: " << wait_timeout_num_++ << std::endl;
+    }
   }
 }
 
@@ -93,10 +104,10 @@ bool CoreThread::steal_task(Task& task) {
     if (core_thread_queue_[index]->second_task_queue_.TrySteal(task) ||
         core_thread_queue_[index]->frist_task_queue_.TrySteal(task)) {
       ret = true;
+      std::cout << "Core thread " << index_ << " Steal thread: " << index << " task\n";
       break;
     }
   }
-  std::cout << "CoreThread Steal task, ret: " << ret << std::endl;
   return ret;
 }
 

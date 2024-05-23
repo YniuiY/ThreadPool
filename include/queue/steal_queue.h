@@ -71,7 +71,7 @@ class StealQueue : public BaseQueue {
       lock_.unlock();
       ret = true;
     } else if (queue_.empty()) {
-      std::cout << "TryPop task but task queue is empty\n";
+      // std::cout << "TryPop task but task queue is empty\n";
     }
 
     return ret;
@@ -100,8 +100,9 @@ class StealQueue : public BaseQueue {
       queue_.pop_back();
       lock_.unlock();
       ret = true;
+      std::cout << "Steal task success\n";
     } else if (queue_.empty()) {
-      std::cout << "TrySteal task but task queue is empty\n";
+      // std::cout << "TrySteal task but task queue is empty\n";
     }
 
     return ret;
