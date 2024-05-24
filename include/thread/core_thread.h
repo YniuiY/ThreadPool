@@ -9,37 +9,43 @@ constexpr int MAX_BATCH_SIZE{2};  // 获取任务的最大数量
 
 class CoreThread {
  public:
-  CoreThread() = default;
+  CoreThread();
+  CoreThread(std::vector<std::shared_ptr<CoreThread>> const& core_thread_vector,
+             StealQueue<Task>* pool_task_queue, int index, int core_thread_num,
+             bool is_batch_io, bool is_bind_cpu);
   ~CoreThread() = default;
 
   void Init();
   void Stop();
   void PushTask(Task&& task);
-
-  bool steal_task(Task& task);
-  bool steal_tasks(std::vector<Task>& tasks);
-
   void SetThreadPoolParam(std::vector<std::shared_ptr<CoreThread>>const& core_thread_vector,
                           StealQueue<Task>* pool_task_queue,
                           int index,
                           int core_thread_num,
                           bool is_batch_io);
+  void SetThreadPoolParam(std::vector<std::shared_ptr<CoreThread>>const& core_thread_vector,
+                          StealQueue<Task>* pool_task_queue,
+                          int index,
+                          int core_thread_num,
+                          bool is_batch_io,
+                          bool is_bind_cpu);
 
  private:
   void run();
   void run_task();
   void run_tasks();
-
-  
+  bool steal_task(Task& task);
+  bool steal_tasks(std::vector<Task>& tasks);
   bool pop_task(Task& task);
   bool pop_tasks(std::vector<Task>& tasks);
   bool pop_pool_task(Task& task);
   bool pop_pool_tasks(std::vector<Task>& tasks);
-  
   void create_steal_range();
+  bool bind_cpu();
 
   std::vector<int> steal_range_;            // 任务窃取范围，元素是核心线程索引
   bool is_batch_io_;                        // 是否批量获取任务
+  bool is_bind_cpu_;                        // 是否绑定CPU核心
   bool is_running_;                         // 线程运行状态
   int index_;                               // 核心线程索引
   int core_thread_num_;                     //

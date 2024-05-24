@@ -5,7 +5,7 @@
 #include "thread_pool.hpp"
 
 void task(int a, int random_time) {
-  std::cout << "##### " << a << " thread id:" << std::this_thread::get_id() << "sleep time: " << random_time << " #####" << std::endl;
+  std::cout << "##### " << a << " thread id:" << std::this_thread::get_id() << " sleep time: " << random_time << " #####" << std::endl;
   std::this_thread::sleep_for(std::chrono::milliseconds(random_time));
 }
 
