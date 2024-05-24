@@ -7,22 +7,6 @@ CoreThread::CoreThread()
       wait_num_{0},
       wait_timeout_num_{0} {}
 
-CoreThread::CoreThread(
-    std::vector<std::shared_ptr<CoreThread>> const& core_thread_vector,
-    StealQueue<Task>* pool_task_queue, int index, int core_thread_num,
-    bool is_batch_io, bool is_bind_cpu)
-    : core_thread_queue_{core_thread_vector},
-      pool_task_queue_ptr_{pool_task_queue},
-      index_{index},
-      is_batch_io_{is_batch_io},
-      is_bind_cpu_{is_bind_cpu},
-      core_thread_num_{core_thread_num},
-      is_running_{false},
-      wait_num_{0},
-      wait_timeout_num_{0} {
-  create_steal_range();
-}
-
 void CoreThread::SetThreadPoolParam(std::vector<std::shared_ptr<CoreThread>>const& core_thread_vector,
                                     StealQueue<Task>* pool_task_queue_ptr,
                                     int index, int core_thread_num,
@@ -53,6 +37,7 @@ void CoreThread::Init() {
   is_running_ = true;
   thread_ = std::thread(std::bind(&CoreThread::run, this));
   std::cout << "CoreThread: " << index_ << ", thread id: " << thread_.get_id() << " is running\n";
+  bind_cpu();
 }
 
 void CoreThread::Stop() {
@@ -149,6 +134,11 @@ bool CoreThread::steal_tasks(std::vector<Task>& tasks) {
   bool ret{false};
   tasks.clear();
   int left_size = MAX_BATCH_SIZE;
+  if (core_thread_queue_.size() == 0) {
+    throw std::runtime_error("Core thread: " + std::to_string(index_) + " core_thread_queue_ is empty");
+  } else {
+    std::cout << "core_thread_queue_ size: " << core_thread_queue_.size() << std::endl;
+  }
   for (auto index : steal_range_) {
     if (left_size > 0 && core_thread_queue_[index]->second_task_queue_.TrySteal(tasks, MAX_BATCH_SIZE)) {
       ret = true;
@@ -177,4 +167,27 @@ void CoreThread::create_steal_range() {
     std::cout << "CoreThread: " << index_ << ", steal range: " << steal_range_[i] << " ";
   }
   std::cout << std::endl;
+}
+
+void CoreThread::bind_cpu() {
+  //仅在Linux上绑定CPU
+#if defined(__linux__) && !defined(__ANDROID__)
+  int cpu_num = std::thread::hardware_concurrency();
+  std::cout << "total cpu core num: " << cpu_num << std::endl;
+
+  if (is_bind_cpu_ && cpu_num && index_ >= 0) {
+    int cpu = index_ % cpu_num;
+    cpu_set_t cpu_set;
+    CPU_ZERO(&cpu_set);
+    CPU_SET(cpu, &cpu_set);
+
+    auto handle = thread_.native_handle();
+    int ret = pthread_setaffinity_np(handle, sizeof(cpu_set), &cpu_set);
+    if (ret != 0) {
+      std::cerr << "bind cpu failed, error code: " << ret << std::endl;
+    } else {
+      std::cout << "bind cpu success, thread: " << index_ << " bind to cpu core: " << cpu << std::endl;
+    }
+  }
+#endif
 }

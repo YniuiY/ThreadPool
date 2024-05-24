@@ -18,8 +18,9 @@ link_directories(
 set(DGRAPH_TUTORIAL_LIST
   sample
   sample-steal
-  sample-batch_task
-  sample-thread_adapt
+  sample-batch
+  sample-adapt
+  sample-bind-cpu
 )
 
 foreach(tut ${DGRAPH_TUTORIAL_LIST})

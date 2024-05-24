@@ -8,7 +8,8 @@ ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength)
       taskQueueLength(tQueueLength),
       isShutdown(false),
       none_core_thread_index_(0),
-      is_batch_io_(false) {
+      is_batch_io_(false),
+      is_bind_cpu_{false} {
   init();
 }
 
@@ -25,7 +26,8 @@ ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p,
       runningTasks(0),
       livingThread(0),
       none_core_thread_index_(0),
-      is_batch_io_(false) {
+      is_batch_io_(false),
+      is_bind_cpu_{false} {
   init();
 }
 
@@ -42,7 +44,26 @@ ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p,
       runningTasks(0),
       livingThread(0),
       none_core_thread_index_(0),
-      is_batch_io_(is_batch_io) {
+      is_batch_io_(is_batch_io),
+      is_bind_cpu_{false} {
+  init();
+}
+
+ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p,
+                       int ltime, Unit u, bool is_batch_io, bool is_bind_cpu)
+    : maxThreadCount(maxCount),
+      coreThreadCount(coreCount),
+      taskQueueLength(tQueueLength),
+      isShutdown(false),
+      policy(p),
+      liveTime(ltime),
+      unit(u),
+      runningThread(0),
+      runningTasks(0),
+      livingThread(0),
+      none_core_thread_index_(0),
+      is_batch_io_(is_batch_io),
+      is_bind_cpu_{is_bind_cpu} {
   init();
 }
 
@@ -67,18 +88,19 @@ void ThreadPool::init() {
 
   core_thread_queue_.reserve(coreThreadCount);
   for (int i = 0; i < coreThreadCount; i++) {
-    // core_thread_queue_.emplace_back(new CoreThread(core_thread_queue_, &pool_task_queue_, i, coreThreadCount, is_batch_io_, false));
     core_thread_queue_.emplace_back(std::make_shared<CoreThread>());
     runningThread++;
     livingThread++;
     std::cout << "Make core thread: " << i << ", thread id: " << core_thread_queue_[i] << std::endl;
   }
 
-  std::cout << "ThreadPool Open Batch IO: " << is_batch_io_ << std::endl;
+  std::cout << "ThreadPool Open Batch IO: " << is_batch_io_
+            << ", Open Bind CPU: " << is_bind_cpu_ << std::endl;
 
-  for (int i = 0; i < coreThreadCount; i++) {
-    core_thread_queue_[i]->SetThreadPoolParam(core_thread_queue_, &pool_task_queue_, i, coreThreadCount, is_batch_io_);
-    core_thread_queue_[i]->Init();
+  for (int thread_index = 0; thread_index < coreThreadCount; thread_index++) {
+    core_thread_queue_[thread_index]->SetThreadPoolParam(
+        core_thread_queue_, &pool_task_queue_, thread_index, coreThreadCount, is_batch_io_, is_bind_cpu_);
+    core_thread_queue_[thread_index]->Init();
   }
 }
 
