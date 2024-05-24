@@ -87,6 +87,7 @@ class StealQueue : public BaseQueue {
       }
       lock_.unlock();
       ret = true;
+      std::cout << "TryPop tasks num: " << tasks.size() << ", bacth size: " << max_batch_size << std::endl;
     }
 
     return ret;
@@ -118,6 +119,7 @@ class StealQueue : public BaseQueue {
       }
       lock_.unlock();
       ret = true;
+      std::cout << "Steal tasks success\n";
     }
 
     return ret;

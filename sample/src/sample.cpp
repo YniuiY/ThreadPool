@@ -21,9 +21,9 @@ void normal_test_case(ThreadPool& pool) {
 }
 
 int main() {
-  int maxCount = 18;
+  int maxCount = 10;
   int coreCount = 8;
-  int taskQueueLength = 80;
+  int taskQueueLength = 10;
   Policy policy = Discard;
   int liveTime = 2;
   ThreadPool::Unit unit = ThreadPool::Unit::Second;
