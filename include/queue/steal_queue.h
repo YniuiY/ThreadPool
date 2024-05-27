@@ -1,10 +1,17 @@
 #ifndef STEAL_QUEUE_H_
 #define STEAL_QUEUE_H_
 
-#include "base_queue.h"
+#include <iostream>
+#include <queue>
+#include <vector>
+#include <mutex>
+#include <thread>
+#include <memory>
+#include <mutex>
+#include <condition_variable>
 
 template<class T>
-class StealQueue : public BaseQueue {
+class StealQueue {
  public:
   StealQueue() = default;
   ~StealQueue() = default;
