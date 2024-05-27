@@ -1,5 +1,7 @@
 #include "thread_pool.hpp"
 
+#include <queue/steal_queue.h>
+
 ThreadPool::ThreadPool() {}
 
 ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength)
@@ -167,7 +169,6 @@ void ThreadPool::none_core_thread_function(std::function<void()>&& func) {
 }
 
 void ThreadPool::joinAllThreads() {
-  // queue没有迭代器
   isShutdown = true;
   cv.notify_all();
 

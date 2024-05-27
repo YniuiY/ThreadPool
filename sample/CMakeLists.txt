@@ -21,6 +21,7 @@ set(DGRAPH_TUTORIAL_LIST
   sample-batch
   sample-adapt
   sample-bind-cpu
+  sample-future
 )
 
 foreach(tut ${DGRAPH_TUTORIAL_LIST})
