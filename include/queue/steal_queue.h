@@ -23,7 +23,6 @@ class StealQueue {
         lock_.unlock();
         break;
       } else {
-        std::cout <<"Push task failed, yield\n";
         std::this_thread::yield(); // 主动让出cpu资源
       }
     }

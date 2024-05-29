@@ -59,7 +59,6 @@ void CoreThread::PushTask(Task&& task) {
 }
 
 void CoreThread::run() {
-  // std::cout << "is_batch_io_: " << is_batch_io_ << std::endl;
   while (is_running_) {
     if (is_batch_io_) {
       run_tasks();
