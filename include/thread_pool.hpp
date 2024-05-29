@@ -134,9 +134,9 @@ class ThreadPool {
   }
  #endif
 
-  int  getRunningThreadCount();
-  int  getLivingThreadCount();
-  int  getCurrentTaskQueueSize();
+  int  GetRunningThreadCount();
+  int  GetLivingThreadCount();
+  int  GetCurrentTaskQueueSize();
 
  private:
     std::vector<std::shared_ptr<CoreThread>>  core_thread_queue_; // 核心本地队列线程
@@ -161,10 +161,10 @@ class ThreadPool {
 
     /* Functions  */ 
     void  none_core_thread_function(std::function<void()>&&); //线程函数，起来以后是独立线程，任务函数执行在这个函数中
-    int   getTaskQueueSize();
-    void  joinAllThreads();
+    int   get_task_queue_size();
+    void  join_all_threads();
     void  init();
-    void  getTid();
+    void  get_tid();
     int   get_real_index();
 };
 

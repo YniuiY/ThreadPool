@@ -17,7 +17,7 @@ void normal_test_case(ThreadPool& pool) {
   }
 
   sleep(30);
-  std::cout << "living thread count: " << pool.getLivingThreadCount() << std::endl;
+  std::cout << "living thread count: " << pool.GetLivingThreadCount() << std::endl;
 }
 
 int main() {

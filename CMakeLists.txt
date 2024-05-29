@@ -14,6 +14,6 @@ aux_source_directory(./src SRCS)
 aux_source_directory(./src/reject_policy REJECT_SRCS)
 aux_source_directory(./src/thread/ THREAD_SRCS)
 
-add_library(ThreadPool SHARED ${SRCS} ${REJECT_SRCS} ${THREAD_SRCS})
+add_library(thread_pool SHARED ${SRCS} ${REJECT_SRCS} ${THREAD_SRCS})
 
-target_link_libraries(ThreadPool pthread)
+target_link_libraries(thread_pool pthread)

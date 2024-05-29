@@ -73,12 +73,18 @@ class StealQueue {
     bool ret{false};
 
     if (!queue_.empty() && lock_.try_lock()) {
-      task = std::move(queue_.front());
-      queue_.pop_front();
-      lock_.unlock();
-      ret = true;
-    } else if (queue_.empty()) {
-      // std::cout << "TryPop task but task queue is empty\n";
+      if (!queue_.empty()) {
+        task = std::move(queue_.front());
+        queue_.pop_front();
+        lock_.unlock();
+        if (task == nullptr) {
+          std::cout << "TryPop task but task is nullptr\n";
+          std::runtime_error("TryPop task but task is nullptr");
+        }
+        ret = true;
+      } else {
+        lock_.unlock();
+      }
     }
 
     return ret;
@@ -104,13 +110,19 @@ class StealQueue {
     bool ret{false};
 
     if (!queue_.empty() && lock_.try_lock()) {
-      task = std::move(queue_.back()); // 窃取从队列后端
-      queue_.pop_back();
-      lock_.unlock();
-      ret = true;
-      std::cout << "Steal task success\n";
-    } else if (queue_.empty()) {
-      // std::cout << "TrySteal task but task queue is empty\n";
+      if (!queue_.empty()) {
+        task = std::move(queue_.back()); // 窃取从队列后端
+        queue_.pop_back();
+        lock_.unlock();
+        if (task == nullptr) {
+          std::cout << "TrySteal task but task is nullptr\n";
+          std::runtime_error("TrySteal task but task is nullptr");
+        }
+        ret = true;
+        std::cout << "Steal task success\n";
+      } else {
+        lock_.unlock();
+      }
     }
 
     return ret;
@@ -133,34 +145,13 @@ class StealQueue {
   }
 
   int Size() {
-    int size{0};
-    while (true) {
-      if (lock_.try_lock()) {
-        size = queue_.size();
-        lock_.unlock();
-        break;
-      } else {
-        std::this_thread::yield();
-      }
-    }
-
-    return size;
+    std::lock_guard<std::mutex> lg(lock_);
+    return queue_.size();
   }
 
   bool Empty() {
-    bool ret{false};
-
-    while (true) {
-      if (lock_.try_lock()) {
-        ret = queue_.empty();
-        lock_.unlock();
-        break;
-      } else {
-        std::this_thread::yield();
-      }
-    }
-
-    return ret;
+    std::lock_guard<std::mutex> lg(lock_);
+    return queue_.empty();
   }
 
  private:

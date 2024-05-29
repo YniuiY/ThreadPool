@@ -22,9 +22,10 @@ set(DGRAPH_TUTORIAL_LIST
   sample-adapt
   sample-bind-cpu
   sample-future
+  sample-long_time_run
 )
 
 foreach(tut ${DGRAPH_TUTORIAL_LIST})
     add_executable(${tut} ./src/${tut}.cpp)
-    target_link_libraries(${tut} ThreadPool pthread)
+    target_link_libraries(${tut} thread_pool pthread)
 endforeach()

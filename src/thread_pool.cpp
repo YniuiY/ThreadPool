@@ -69,9 +69,15 @@ ThreadPool::ThreadPool(int maxCount, int coreCount, int tQueueLength, Policy p,
   init();
 }
 
-ThreadPool::~ThreadPool() { joinAllThreads(); }
+ThreadPool::~ThreadPool() { join_all_threads(); }
 
-void ThreadPool::getTid() {
+int ThreadPool::GetRunningThreadCount() { return runningThread; }
+
+int ThreadPool::GetLivingThreadCount() { return livingThread; }
+
+int ThreadPool::GetCurrentTaskQueueSize() { return pool_task_queue_.Size(); }
+
+void ThreadPool::get_tid() {
   std::cout << "thread id:" << std::this_thread::get_id() << std::endl;
 }
 
@@ -124,8 +130,12 @@ void ThreadPool::none_core_thread_function(std::function<void()>&& func) {
     Task task;
     if (pool_task_queue_.TryPop(task)) {
       // std::cout << "none core thread run task\n";
+      if (task ==  nullptr) {
+        std::cout << "none core thread poped task is nullptr\n";
+        std::runtime_error("none core thread poped task is nullptr");
+      }
       task();
-      std::cout << "none core thread: " << index << " run task over\n";
+      // std::cout << "none core thread: " << index << " run task over\n";
     } else if (pool_task_queue_.Empty()) {
       runningThread--;
       std::unique_lock<std::mutex> wait_lock(wait_mutex_);
@@ -168,7 +178,7 @@ void ThreadPool::none_core_thread_function(std::function<void()>&& func) {
   }
 }
 
-void ThreadPool::joinAllThreads() {
+void ThreadPool::join_all_threads() {
   isShutdown = true;
   cv.notify_all();
 
@@ -186,13 +196,7 @@ void ThreadPool::joinAllThreads() {
   }
 }
 
-int ThreadPool::getRunningThreadCount() { return runningThread; }
-
-int ThreadPool::getLivingThreadCount() { return livingThread; }
-
-int ThreadPool::getCurrentTaskQueueSize() { return pool_task_queue_.Size(); }
-
-int ThreadPool::getTaskQueueSize() { return pool_task_queue_.Size(); }
+int ThreadPool::get_task_queue_size() { return pool_task_queue_.Size(); }
 
 int ThreadPool::get_real_index() {
   int real_index = task_index_++;

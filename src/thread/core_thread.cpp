@@ -59,7 +59,7 @@ void CoreThread::PushTask(Task&& task) {
 }
 
 void CoreThread::run() {
-  std::cout << "is_batch_io_: " << is_batch_io_ << std::endl;
+  // std::cout << "is_batch_io_: " << is_batch_io_ << std::endl;
   while (is_running_) {
     if (is_batch_io_) {
       run_tasks();
@@ -70,11 +70,14 @@ void CoreThread::run() {
 }
 
 void CoreThread::run_task () {
-  Task task;
+  Task task = nullptr;
   if (pop_task(task) || pop_pool_task(task) || steal_task(task)) {
+    if (task == nullptr) {
+      std::cout << "Core thread: " << index_ << " get task is nullptr\n";
+      throw(std::runtime_error("Core thread: " + std::to_string(index_) + " get task is nullptr"));
+    }
     task();
   } else {
-    std::cout << "Core thread: " << index_ << " wait num: " << wait_num_++ <<  std::endl;
     std::unique_lock<std::mutex> ul(lock_);
     auto status = cv_.wait_for(ul, std::chrono::milliseconds(2000));
     if (status == std::cv_status::timeout) {
@@ -137,7 +140,7 @@ bool CoreThread::steal_tasks(std::vector<Task>& tasks) {
   if (core_thread_queue_.size() == 0) {
     throw std::runtime_error("Core thread: " + std::to_string(index_) + " core_thread_queue_ is empty");
   } else {
-    std::cout << "core_thread_queue_ size: " << core_thread_queue_.size() << std::endl;
+    // std::cout << "core_thread_queue_ size: " << core_thread_queue_.size() << std::endl;
   }
   for (auto index : steal_range_) {
     if (left_size > 0 && core_thread_queue_[index]->second_task_queue_.TrySteal(tasks, MAX_BATCH_SIZE)) {
